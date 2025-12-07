@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin View: {{ client.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF2D55;
+            --text-dark: #1E2022;
+            --text-light: #77838F;
+            --bg-color: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --border-color: #EAEAEA;
+        }
+        body { font-family: 'Manrope', sans-serif; background-color: var(--bg-color); color: var(--text-dark); padding: 2rem; }
+        .card { background-color: var(--card-bg); border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,.05); margin-top: 1rem; }
+        h1, h3 { font-weight: 800; }
+        h1 { margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        h3 { font-size: 1.25rem; margin-bottom: 1rem; }
+        a { color: var(--primary-color); text-decoration: none; font-weight: 600; }
+        .grid { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: .8rem; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        th { font-weight: 700; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: .5rem; }
+        .calendar-grid div { height: 32px; display: inline-flex; justify-content: center; align-items: center; font-size: .9rem; }
+        .day-name { color: var(--text-light); font-weight: 600; }
+        .day-number.attended { background-color: #ffdde1; color: #b93a3a; font-weight: 700; border-radius: 50%; }
+        .cancel-btn { background: #ffeaea; color: #b30000; border:1px solid #b30000; padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1><a href="{{ url_for('admin_dashboard') }}" title="Back to Dashboard">←</a> User Details: {{ client.name }}</h1>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h3>User Info</h3>
+                <p><strong>Name:</strong> {{ client.name }}</p>
+                <p><strong>Email:</strong> {{ client.email }}</p>
+                <p><strong>Role:</strong> {{ client.role.capitalize() }}</p>
+                {% if client.role == 'member' %}<p><strong>Goal:</strong> {{ client.goal or 'Not set' }}</p>{% endif %}
+            </div>
+
+            <div class="card">
+                <h3>Class Bookings</h3>
+                <table>
+                    <thead><tr><th>Class</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                    {% for booking in all_bookings %}
+                        <tr id="booking-row-{{ booking.id }}">
+                            <td>{{ booking.class_info.name }}</td>
+                            <td>{{ booking.booking_date.strftime('%b %d, %Y') }}</td>
+                            <td>{{ booking.status }}</td>
+                            <td><button class="cancel-btn" onclick="cancelBooking({{ booking.id }})">Cancel</button></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4">No class bookings found.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+             <div class="card">
+                <h3>Assigned Workout Plans</h3>
+                <table>
+                     <thead><tr><th>Plan Title</th><th>Assigned By</th><th>Date</th></tr></thead>
+                     <tbody>
+                        {% for plan in workout_plans %}
+                        <tr>
+                            <td><strong>{{ plan.title }}</strong><br><small>{{ plan.description }}</small></td>
+                            <td>{{ plan.trainer_name }}</td>
+                            <td>{{ plan.assigned_date.strftime('%b %d, %Y') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3">No workout plans assigned.</td></tr>
+                        {% endfor %}
+                     </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h3>Attendance Calendar</h3>
+                <div id="calendar-container"></div>
+            </div>
+            <div class="card">
+                <h3>Weight History</h3>
+                <table>
+                    <thead><tr><th>Date</th><th>Weight (lb)</th></tr></thead>
+                    <tbody>
+                    {% for item in weight_history %}
+                        <tr><td>{{ item.date.strftime('%b %d, %Y') }}</td><td>{{ item.weight_lb }}</td></tr>
+                    {% else %}
+                        <tr><td colspan="2">No weight history logged.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            fetch(`/api/cancel_booking/${bookingId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`booking-row-${bookingId}`).style.display = 'none';
+                    alert(data.message);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+        
+        const attendedDates = new Set({{ attended_dates | tojson }});
+        function renderCalendar(date) {
+            const container = document.getElementById('calendar-container');
+            const month = date.getMonth(), year = date.getFullYear();
+            let html = `<div style="text-align:center;font-weight:700;margin-bottom:1rem;"><strong>${date.toLocaleString('default', { month: 'long' })} ${year}</strong></div><div class="calendar-grid">`;
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => { html += `<div class="day-name">${d}</div>`; });
+            const firstDay = new Date(year, month, 1).getDay();
+            for (let i = 0; i < firstDay; i++) { html += '<div></div>'; }
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = new Date(year, month, i).toISOString().slice(0, 10);
+                html += `<div class="day-number ${attendedDates.has(dateStr) ? 'attended' : ''}">${i}</div>`;
+            }
+            container.innerHTML = html + '</div>';
+        }
+        renderCalendar(new Date());
+    </script>
+</body>
+</html>

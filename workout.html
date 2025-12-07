@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Workout Timer with Sidebar Tips</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      display: flex;
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    aside {
+      width: 300px;
+      background: #1a1a1a;
+      padding: 1.5rem;
+      border-left: 2px solid #39FF14;
+    }
+
+    #exercise-container {
+      width: 300px;
+      height: 300px;
+      margin: 2rem auto;
+      border-radius: 12px;
+      background: #222;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    #exercise-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #success-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100px;
+      transform: translate(-50%, -50%);
+      display: none;
+      pointer-events: none;
+    }
+
+    #timer {
+      font-size: 3rem;
+      margin-top: 1rem;
+    }
+
+    #next-label {
+      font-size: 1.5rem;
+      color: #39FF14;
+      display: none;
+      margin-top: 1rem;
+    }
+
+    #start-btn, .control-btn {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      background-color: #39FF14;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0.5rem;
+    }
+
+    progress {
+      width: 80%;
+      height: 20px;
+      margin-top: 1rem;
+      appearance: none;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    progress::-webkit-progress-bar {
+      background-color: #444;
+      border-radius: 10px;
+    }
+
+    progress::-webkit-progress-value {
+      background-color: #39FF14;
+      border-radius: 10px;
+    }
+
+    /* Sidebar style */
+    #tip-category {
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 1rem;
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #39FF14;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+
+    #flash-btn, #fav-btn {
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    #flashcard {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: #FFD700;
+      background: #333;
+      padding: 0.8rem;
+      border-radius: 8px;
+    }
+
+    #favorites-list img {
+      margin-right: 0.5rem;
+    }
+
+    #favorites-list li {
+      list-style: none;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<main>
+  <h1>Workout Timer with DSA 💪</h1>
+
+  <button id="start-btn">Start Workout</button>
+
+  <div id="exercise-container" style="display:none;">
+    <img id="exercise-image" src="" alt="Exercise" />
+    <!-- Moved success image inside container for positioning -->
+    <img 
+      id="success-image" 
+      src="https://cdn-icons-png.flaticon.com/512/4436/4436481.png" 
+      alt="Success" 
+    />
+  </div>
+
+  <div id="timer" style="display:none;">22</div>
+  <progress id="progress-bar" value="0" max="22" style="display:none;"></progress>
+  <div id="next-label">Next Exercise...</div>
+
+  <div style="margin-top: 1.5rem;">
+    <button class="control-btn" id="next-btn">Next</button>
+    <button class="control-btn" id="skip-btn">Skip</button>
+    <button class="control-btn" id="restart-btn" style="display:none;">🔁 Start Over</button>
+  </div>
+</main>
+
+<!-- Sidebar for Tips -->
+<aside>
+  <h2>💡 Workout Tips</h2>
+
+  <select id="tip-category">
+    <option value="random">🎲 Random</option>
+    <option value="hydration">💧 Hydration</option>
+    <option value="breathing">🧘 Breathing</option>
+    <option value="motivation">💪 Motivation</option>
+    <option value="form">📏 Form</option>
+    <option value="recovery">🧊 Recovery</option>
+  </select>
+
+  <button class="control-btn" id="flash-btn">Show Tip</button>
+  <div id="flashcard">Select a category to get started!</div>
+
+  <hr style="margin: 1rem 0; border-color: #39FF14;" />
+  <h3>❤️ Favorites</h3>
+  <button class="control-btn" id="fav-btn">❤️ Add to Favorites</button>
+  <ul id="favorites-list" style="margin-top:1rem; padding-left: 1rem;"></ul>
+</aside>
+
+<!-- Sounds -->
+<audio id="countdown-audio" src="static/20-seconds-game-countdown-142456.mp3" preload="auto" loop></audio>
+<audio id="beep-sound" src="static/censor-beep-1-372459.mp3" preload="auto"></audio>
+
+<script>
+  class Queue {
+    constructor(items = []) {
+      this.items = [...items];
+    }
+
+    enqueue(item) {
+      this.items.push(item);
+    }
+
+    dequeue() {
+      return this.items.shift();
+    }
+
+    isEmpty() {
+      return this.items.length === 0;
+    }
+  }
+
+  const exerciseQueue = new Queue([
+    'https://static.vecteezy.com/system/resources/previews/021/491/889/original/young-man-doing-yoga-poses-illustration-png.png',
+    'https://png.pngtree.com/png-vector/20240123/ourmid/pngtree-yoga-excercise-pose-png-image_11471045.png',
+    'https://www.pngplay.com/wp-content/uploads/8/Yoga-No-Background.png'
+  ]);
+
+  const historyStack = [];
+  const favorites = [];
+
+  const flashcards = new Map([
+    ["hydration", ["Stay hydrated! 💧", "Drink water between sets 🚰"]],
+    ["breathing", ["Keep breathing steadily 🧘", "Inhale through nose, exhale through mouth 🌬️"]],
+    ["motivation", ["You're stronger than you think 💪", "Push your limits 🚀"]],
+    ["form", ["Good posture prevents injury! 🦴", "Engage your core 🧱"]],
+    ["recovery", ["Stretch after workout 🧘‍♂️", "Cool down to avoid cramps ❄️"]]
+  ]);
+
+  const timerEl = document.getElementById('timer');
+  const imageEl = document.getElementById('exercise-image');
+  const successImage = document.getElementById('success-image');
+  const nextLabel = document.getElementById('next-label');
+  const startBtn = document.getElementById('start-btn');
+  const progressBar = document.getElementById('progress-bar');
+  const container = document.getElementById('exercise-container');
+  const flashcardEl = document.getElementById('flashcard');
+  const beep = document.getElementById('beep-sound');
+  const countdownAudio = document.getElementById('countdown-audio');
+  const restartBtn = document.getElementById('restart-btn');
+
+  let currentExercise = null;
+  let timeLeft = 22;
+  let countdown, progressInterval;
+
+  startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+    container.style.display = 'block';
+    timerEl.style.display = 'block';
+    progressBar.style.display = 'block';
+    restartBtn.style.display = 'none';
+    successImage.style.display = 'none';
+    startNextExercise();
+  });
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    stopCurrentTimers();
+    startNextExercise();
+  });
+
+  document.getElementById('skip-btn').addEventListener('click', () => {
+    stopCurrentTimers();
+    startNextExercise();
+  });
+
+  restartBtn.addEventListener('click', () => {
+    resetWorkout();
+  });
+
+  document.getElementById('fav-btn').addEventListener('click', () => {
+    if (currentExercise && !favorites.includes(currentExercise)) {
+      favorites.push(currentExercise);
+      updateFavoritesList();
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+  });
+
+  document.getElementById('flash-btn').addEventListener('click', () => {
+    const selectedCategory = document.getElementById('tip-category').value;
+    let tips = [];
+
+    if (selectedCategory === "random") {
+      const allTips = Array.from(flashcards.values()).flat();
+      tips = allTips;
+    } else {
+      tips = flashcards.get(selectedCategory) || [];
+    }
+
+    if (tips.length > 0) {
+      const randomTip = tips[Math.floor(Math.random() * tips.length)];
+      flashcardEl.innerText = randomTip;
+    } else {
+      flashcardEl.innerText = "No tips found 😕";
+    }
+  });
+
+  window.onload = () => {
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+      const favArr = JSON.parse(savedFavorites);
+      favArr.forEach(fav => {
+        if (!favorites.includes(fav)) favorites.push(fav);
+      });
+      updateFavoritesList();
+    }
+  };
+
+  function updateFavoritesList() {
+    const listEl = document.getElementById('favorites-list');
+    listEl.innerHTML = "";
+    favorites.forEach(url => {
+      const li = document.createElement('li');
+      li.innerHTML = `<img src="${url}" width="40" style="vertical-align:middle; border-radius:6px;"> ❤️`;
+      listEl.appendChild(li);
+    });
+  }
+
+  function stopCurrentTimers() {
+    clearInterval(countdown);
+    clearInterval(progressInterval);
+    countdownAudio.pause();
+  }
+
+  function startNextExercise() {
+    if (exerciseQueue.isEmpty()) {
+      timerEl.innerText = "Workout Complete!";
+      imageEl.style.display = 'none';       // Hide exercise image
+      successImage.style.display = 'block'; // Show success image inside container
+      progressBar.style.display = 'none';
+      nextLabel.style.display = 'none';
+      restartBtn.style.display = 'inline-block';
+      container.style.display = 'block';    // Show container itself
+      timerEl.style.display = 'block';
+      return;
+    }
+
+    if (currentExercise) historyStack.push(currentExercise);
+    currentExercise = exerciseQueue.dequeue();
+    showExercise(currentExercise);
+  }
+
+  function showExercise(exerciseImg) {
+    successImage.style.display = 'none';  // Hide success image
+    imageEl.style.display = 'block';      // Show exercise image
+    imageEl.src = exerciseImg;
+    timeLeft = 22;
+    timerEl.innerText = timeLeft;
+    progressBar.value = 0;
+    nextLabel.style.display = 'none';
+    flashcardEl.innerText = "";
+
+    container.style.display = 'block';
+    timerEl.style.display = 'block';
+    progressBar.style.display = 'block';
+    restartBtn.style.display = 'none';
+
+    countdownAudio.currentTime = 0;
+    countdownAudio.play();
+
+    countdown = setInterval(() => {
+      timeLeft--;
+      timerEl.innerText = timeLeft;
+
+      if (timeLeft <= 0) {
+        clearInterval(countdown);
+        clearInterval(progressInterval);
+        countdownAudio.pause();
+        beep.play();
+        nextLabel.style.display = 'block';
+        setTimeout(() => startNextExercise(), 2000);
+      }
+    }, 1000);
+
+    progressInterval = setInterval(() => {
+      if (progressBar.value < 22) {
+        progressBar.value += 1;
+      }
+    }, 1000);
+  }
+
+  function resetWorkout() {
+    exerciseQueue.items = [
+      'https://static.vecteezy.com/system/resources/previews/021/491/889/original/young-man-doing-yoga-poses-illustration-png.png',
+      'https://png.pngtree.com/png-vector/20240123/ourmid/pngtree-yoga-excercise-pose-png-image_11471045.png',
+      'https://www.pngplay.com/wp-content/uploads/8/Yoga-No-Background.png'
+    ];
+    historyStack.length = 0;
+
+    restartBtn.style.display = 'none';
+    successImage.style.display = 'none';
+    container.style.display = 'block';
+    timerEl.style.display = 'block';
+    progressBar.style.display = 'block';
+    nextLabel.style.display = 'none';
+    timerEl.innerText = '22';
+    progressBar.value = 0;
+    startBtn.style.display = 'none';
+
+    startNextExercise();
+  }
+</script>
+</body>
+</html>

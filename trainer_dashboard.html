@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+         :root {
+            --primary-color: #39FF14;
+            --primary-light: #E9EDFF;
+            --text-dark: #1E2022;
+            --text-light: #77838F;
+            --bg-color: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --border-color: #EAEAEA
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+        
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-bg);
+            padding: 2rem 1.5rem;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: .8rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 600;
+            transition: all .3s ease
+        }
+        
+        .nav-link.active,
+        .nav-link:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color)
+        }
+        
+        .nav-link i {
+            width: 20px;
+            margin-right: 1rem;
+            text-align: center
+        }
+        
+        .logout-link {
+            margin-top: auto
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 2rem
+        }
+        
+        .main-header {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 2rem
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem
+        }
+        
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 16px
+        }
+        
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 800
+        }
+        
+        .stat-card .label {
+            color: var(--text-light);
+            font-weight: 600
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 2rem
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700
+        }
+        
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: .75rem 0;
+            border-bottom: 1px solid var(--border-color)
+        }
+        
+        .list-item:last-child {
+            border-bottom: none
+        }
+        
+        .item-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover
+        }
+        
+        .item-info .name a {
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--text-dark)
+        }
+        
+        .item-info .detail {
+            font-size: .9rem;
+            color: var(--text-light)
+        }
+        
+        .time {
+            margin-left: auto;
+            color: var(--text-light);
+            font-size: .9rem;
+            flex-shrink: 0
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6)
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 80%;
+            max-width: 500px
+        }
+        
+        .modal-content h3 {
+            margin-top: 0
+        }
+        
+        .modal-content input,
+        .modal-content textarea {
+            width: 100%;
+            padding: .8rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px
+        }
+        
+        .modal-content button {
+            padding: .8rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    {% from '_macros.html' import stat_card, activity_item %}
+    <nav class="sidebar">
+        <a href="{{ url_for('trainer_dashboard') }}" class="nav-link active"><i class="fas fa-home"></i> Home</a>
+        <a href="{{ url_for('logout') }}" class="nav-link logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </nav>
+    <main class="main-content">
+        <h1 class="main-header">Trainer Dashboard</h1>
+        <div class="stats-grid">
+            {{ stat_card(stats.active_clients, 'Active Clients') }}
+            {{ stat_card(stats.upcoming_classes, 'Upcoming Classes') }}
+            {{ stat_card(stats.training_plans, 'Training Plans') }}
+        </div>
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">Members</div>
+                {% for client in clients %}
+                <div class="list-item">
+                    <img src="https://i.pravatar.cc/40?u={{ client.email }}" class="item-pic">
+                    <div class="item-info">
+                        <div class="name">
+                            <a href="{{ url_for('view_client', client_id=client.id) }}">{{ client.name }}</a>
+                        </div>
+                        <div class="detail">{{ client.goal or 'No goal set' }}</div>
+                    </div>
+                    <div class="time">{{ client.last_active }}</div>
+                    <button onclick="openPlanModal('{{ client.id }}', '{{ client.name }}')">Assign Plan</button>
+                </div>
+                {% else %}
+                <p>You have not been assigned any clients yet.</p>
+                {% endfor %}
+            </div>
+            <div class="card">
+                <div class="card-header">Activity</div>
+                {% for item in activities %}
+                    {{ activity_item(item) }}
+                {% else %}
+                <p>No recent activity from your clients.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <div id="planModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closePlanModal()" style="float:right;cursor:pointer;font-size:1.5rem;">&times;</span>
+            <h3 id="modalTitle">Assign Plan to Member</h3>
+            <input type="hidden" id="memberId">
+            <input type="text" id="planTitle" placeholder="Plan Title (e.g., Weekly Cardio)">
+            <textarea id="planDescription" rows="4" placeholder="Description (e.g., Monday: 30min treadmill...)"></textarea>
+            <button onclick="submitPlan()">Assign Plan</button>
+        </div>
+    </div>
+    <script>
+        const modal = document.getElementById("planModal");
+
+        function openPlanModal(clientId, clientName) {
+            document.getElementById("memberId").value = clientId;
+            document.getElementById("modalTitle").innerText = `Assign Plan to ${clientName}`;
+            modal.style.display = "block";
+        }
+
+        function closePlanModal() {
+            modal.style.display = "none";
+        }
+
+        function submitPlan() {
+            const planData = {
+                member_id: document.getElementById("memberId").value,
+                title: document.getElementById("planTitle").value,
+                description: document.getElementById("planDescription").value
+            };
+            fetch("/api/assign_plan", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(planData)
+            }).then(res => res.json()).then(data => {
+                alert(data.message);
+                if (data.success) {
+                    closePlanModal();
+                    location.reload();
+                }
+            });
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closePlanModal();
+            }
+        }
+    </script>
+</body>
+
+</html>

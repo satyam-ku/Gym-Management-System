@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #F7F8FC;
+            padding: 2rem
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: auto
+        }
+        
+        .main-header {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 2rem
+        }
+        
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem
+        }
+        
+        .class-card {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .05);
+            display: flex;
+            gap: 1rem;
+            padding: 1rem
+        }
+        
+        .class-card img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px
+        }
+        
+        .class-card-content {
+            display: flex;
+            flex-direction: column
+        }
+        
+        .class-card h3 {
+            margin: 0;
+            font-size: 1.25rem
+        }
+        
+        .class-card p {
+            color: #77838F;
+            margin: .5rem 0
+        }
+        
+        .book-btn {
+            margin-top: auto;
+            padding: .8rem;
+            border: none;
+            border-radius: 8px;
+            background-color: #4A69FF;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="main-header">Class Booking</h1>
+        <div class="class-grid">
+            {% for class in classes %}
+            <div class="class-card">
+                
+                {% if class.name == 'Kickboxing' %}
+                    <img src="{{ url_for('static', filename='kickboxing.jpg') }}" alt="Kickboxing">
+                {% elif class.name == 'Zumba' %}
+                    <img src="{{ url_for('static', filename='zumba.jpg') }}" alt="Zumba">
+                {% elif class.name == 'Pilates' %}
+                    <img src="{{ url_for('static', filename='pilates.jpg') }}" alt="Pilates">
+                {% elif class.name == 'Spinning' %}
+                    <img src="{{ url_for('static', filename='Spinning.jpg') }}" alt="Spinning">
+                {% else %}
+                    <img src="{{ class.image_url }}" alt="{{ class.name }}">
+                {% endif %}
+
+                <div class="class-card-content">
+                    <h3>{{ class.name }}</h3>
+                    <p>{{ class.day }} at {{ class.time }} ({{ class.duration }})</p>
+                    <p>{{ class.description }}</p>
+                    <button class="book-btn" onclick="bookClass({{ class.id }})">Book Now</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        function bookClass(t) {
+            fetch("/api/book_class", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    class_id: t
+                })
+            }).then(t => t.json()).then(t => {
+                alert(t.message), t.success && window.location.reload()
+            })
+        }
+    </script>
+</body>
+
+</html>

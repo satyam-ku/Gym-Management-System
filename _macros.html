@@ -1,0 +1,15 @@
+{% macro stat_card(value, label) %}
+<div class="stat-card">
+    <div class="value">{{ value }}</div>
+    <div class="label">{{ label }}</div>
+</div>
+{% endmacro %} {% macro activity_item(item) %}
+<div class="list-item">
+    <img src="https://i.pravatar.cc/40?u={{ item.user }}" class="item-pic">
+    <div class="item-info">
+        <div class="name">{{ item.user }}</div>
+        <div class="detail">{{ item.action }}</div>
+    </div>
+    <div class="time">{{ item.time }}</div>
+</div>
+{% endmacro %}

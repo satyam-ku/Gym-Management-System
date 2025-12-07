@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Gym | Access</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+         :root {
+            --member-color: #00BFFF;
+            --trainer-color: #39FF14;
+            --admin-color: #FF2D55;
+            --active-color: var(--member-color);
+            --bg-color: #0A0A0A;
+            --card-bg: rgba(16, 16, 16, 0.8);
+            --text-color: #F5F5F7;
+            --text-muted: #8A8A8E;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --mouse-x: 50%;
+            --mouse-y: 50%
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden
+        }
+        
+        #interactive-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: url('https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1770');
+            background-size: cover;
+            background-position: center
+        }
+        
+        #interactive-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1
+        }
+        
+        #interactive-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle 400px at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.1), transparent);
+            z-index: 2;
+            transition: background-image .1s ease-out
+        }
+        
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 1s ease-out both
+        }
+        
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--active-color), transparent, var(--active-color));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: destination-out;
+            mask-composite: exclude;
+            animation: rotateBorder 5s linear infinite;
+            transition: background .4s ease
+        }
+        
+        @keyframes rotateBorder {
+            from {
+                transform: rotate(0deg)
+            }
+            to {
+                transform: rotate(360deg)
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(.9)
+            }
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+        
+        .main-title,
+        .segmented-control,
+        #auth-form,
+        .toggle-link,
+        .flash-messages {
+            position: relative
+        }
+        
+        .main-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--text-color)
+        }
+        
+        .main-title span {
+            color: var(--active-color);
+            text-shadow: 0 0 10px var(--active-color), 0 0 20px var(--active-color);
+            transition: all .4s ease
+        }
+        
+        .segmented-control {
+            display: flex;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 2.5rem;
+            padding: 5px
+        }
+        
+        .role-btn {
+            flex: 1;
+            padding: .75rem 0;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            transition: color .4s ease
+        }
+        
+        .role-btn.active {
+            color: #fff
+        }
+        
+        #active-indicator {
+            position: absolute;
+            top: 5px;
+            height: calc(100% - 10px);
+            background-color: var(--active-color);
+            border-radius: 8px;
+            box-shadow: 0 0 15px var(--active-color);
+            transition: all .4s cubic-bezier(.68, -.55, .27, 1.55);
+            z-index: 1
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all .3s ease
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--active-color);
+            box-shadow: 0 0 0 3px rgba(var(--active-color-rgb), .2), inset 0 2px 4px rgba(0, 0, 0, .2)
+        }
+        
+        .slide-down {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .5s ease-out
+        }
+        
+        .auth-card.is-signup .slide-down {
+            max-height: 100px
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 1rem 0;
+            border: none;
+            border-radius: 8px;
+            color: #111;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--active-color);
+            box-shadow: 0 0 20px rgba(0, 0, 0, .3);
+            transition: all .3s ease
+        }
+        
+        .submit-btn:hover {
+            filter: brightness(1.2);
+            transform: translateY(-3px)
+        }
+        
+        .submit-btn:active {
+            transform: translateY(-1px);
+            filter: brightness(1.1)
+        }
+        
+        .toggle-link {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-muted)
+        }
+        
+        .toggle-link a {
+            color: var(--active-color);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer
+        }
+        
+        .flash-message {
+            text-align: center;
+            margin-top: 1rem;
+            padding: .8rem;
+            border-radius: 8px;
+            font-weight: 500;
+            background-color: rgba(255, 45, 85, .2);
+            color: #FF2D55;
+            border: 1px solid #FF2D55
+        }
+    </style>
+</head>
+
+<body>
+    <div id="interactive-bg"></div>
+    <div class="auth-card" id="auth-card">
+        <h1 class="main-title" id="main-title">Join <span>The Elite</span></h1>
+        <div class="segmented-control" id="role-selector">
+            <div id="active-indicator"></div><button class="role-btn active" data-role="member">Member</button><button class="role-btn" data-role="trainer">Trainer</button><button class="role-btn" data-role="admin">Admin</button></div>
+        <form id="auth-form" method="POST"><input type="hidden" id="role" name="role" value="member">
+            <div class="slide-down">
+                <div class="form-group"><input type="text" id="name" name="name" class="form-input" placeholder="Full Name"></div>
+            </div>
+            <div class="form-group"><input type="email" id="email" name="email" class="form-input" placeholder="Email" required></div>
+            <div class="form-group"><input type="password" id="password" name="password" class="form-input" placeholder="Password" required></div><button type="submit" class="submit-btn" id="submit-button">Login</button></form>
+        <div id="flash-container"></div>
+        <p class="toggle-link" id="toggle-link">Don't have an account? <a>Sign Up</a></p>
+    </div>
+    <script>
+        const root = document.documentElement,
+            authCard = document.getElementById("auth-card"),
+            roleButtons = document.querySelectorAll(".role-btn"),
+            activeIndicator = document.getElementById("active-indicator"),
+            mainTitleSpan = document.querySelector("#main-title span"),
+            toggleLink = document.querySelector("#toggle-link a"),
+            submitButton = document.getElementById("submit-button"),
+            authForm = document.getElementById("auth-form"),
+            roleInput = document.getElementById("role");
+        let currentRole = "member",
+            currentMode = "login";
+
+        function hexToRgb(t) {
+            let e = 0,
+                n = 0,
+                o = 0;
+            return 4 == t.length ? (e = "0x" + t[1] + t[1], n = "0x" + t[2] + t[2], o = "0x" + t[3] + t[3]) : 7 == t.length && (e = "0x" + t[1] + t[2], n = "0x" + t[3] + t[4], o = "0x" + t[5] + t[6]), `${+e},${+n},${+o}`
+        }
+
+        function updateTheme(t) {
+            currentRole = t, roleInput.value = t;
+            const e = getComputedStyle(root).getPropertyValue(`--${t}-color`).trim();
+            root.style.setProperty("--active-color", e), root.style.setProperty("--active-color-rgb", hexToRgb(e)), roleButtons.forEach(t => t.classList.remove("active"));
+            const n = document.querySelector(`.role-btn[data-role="${t}"]`);
+            n.classList.add("active"), activeIndicator.style.width = `${n.offsetWidth}px`, activeIndicator.style.left = `${n.offsetLeft}px`, updateFormView()
+        }
+
+        function updateFormView() {
+            const t = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+            authCard.classList.toggle("is-signup", "signup" === currentMode), mainTitleSpan.querySelector("span").textContent = t, submitButton.textContent = "login" === currentMode ? "Login" : "Create Account", toggleLink.textContent = "login" === currentMode ? "Sign Up" : "Login", document.querySelector("#toggle-link").firstChild.textContent = "login" === currentMode ? "Don't have an account? " : "Already have an account? ", document.getElementById("toggle-link").style.display = "admin" === currentRole ? "none" : "block", "admin" === currentRole && "signup" === currentMode && (currentMode = "login", updateFormView())
+        }
+        document.addEventListener("mousemove", t => {
+            root.style.setProperty("--mouse-x", `${t.clientX}px`), root.style.setProperty("--mouse-y", `${t.clientY}px`)
+        }), roleButtons.forEach(t => t.addEventListener("click", () => updateTheme(t.dataset.role))), toggleLink.addEventListener("click", t => {
+            t.preventDefault(), currentMode = "login" === currentMode ? "signup" : "login", updateFormView()
+        }), authForm.addEventListener("submit", function(t) {
+            t.preventDefault();
+            const e = new FormData(authForm),
+                n = "login" === currentMode ? "/login" : "/signup";
+            document.getElementById("flash-container").innerHTML = "", fetch(n, {
+                method: "POST",
+                body: e
+            }).then(t => t.json()).then(t => {
+                if (t.success) t.redirect_url ? window.location.href = t.redirect_url : (alert(t.message), currentMode = "login", updateFormView());
+                else {
+                    const e = document.getElementById("flash-container"),
+                        n = document.createElement("div");
+                    n.className = "flash-message", n.innerHTML = t.message, e.appendChild(n)
+                }
+            }).catch(t => console.error("Error:", t))
+        }), window.addEventListener("load", () => updateTheme("member")), window.addEventListener("resize", () => updateTheme(currentRole));
+    </script>
+</body>
+
+</html>

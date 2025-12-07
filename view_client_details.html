@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ client.name }}'s Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+         :root {
+            --primary-color: #39FF14;
+            --text-dark: #1E2022;
+            --text-light: #77838F;
+            --bg-color: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --border-color: #EAEAEA
+        }
+        
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            padding: 2rem
+        }
+        
+        h1 {
+            font-weight: 800;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .05);
+            margin-top: 1rem
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem
+        }
+        
+        .progress-table table {
+            width: 100%;
+            border-collapse: collapse
+        }
+        
+        .progress-table th,
+        .progress-table td {
+            text-align: left;
+            padding: .8rem;
+            border-bottom: 1px solid var(--border-color)
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            gap: .5rem
+        }
+        
+        .calendar-grid div {
+            height: 32px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: .9rem
+        }
+        
+        .day-name {
+            color: var(--text-light);
+            font-weight: 600
+        }
+        
+        .day-number.attended {
+            background-color: #e0ffe0;
+            color: green;
+            font-weight: 700;
+            border-radius: 50%
+        }
+        
+        .action-buttons button {
+            padding: .4rem .8rem;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+        
+        .btn-attend {
+            background-color: #2ED47A
+        }
+        
+        .btn-miss {
+            background-color: #FF2D55
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- THIS IS THE CORRECTED HEADER -->
+    <h1>
+        <a href="{{ url_for('trainer_dashboard') }}" title="Back to Dashboard" style="text-decoration: none; color: var(--primary-color); margin-right: 1rem;">←</a> Client Details: {{ client.name }}
+    </h1>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h3>Client Info</h3>
+                <p><strong>Name:</strong> {{ client.name }}</p>
+                <p><strong>Email:</strong> {{ client.email }}</p>
+                <p><strong>Goal:</strong> {{ client.goal or 'Not set' }}</p>
+            </div>
+            <div class="card">
+                <h3>Mark Today's Attendance</h3>
+                {% for booking in todays_bookings %}
+                <div id="booking-row-{{ booking.id }}" style="display:flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+                    <span>{{ booking.class_info.name }} - Status: <strong id="status-text-{{ booking.id }}">{{ booking.status }}</strong></span> {% if booking.status == 'BOOKED' %}
+                    <div class="action-buttons" id="actions-{{ booking.id }}">
+                        <button class="btn-attend" onclick="markAttendance({{ booking.id }}, 'ATTENDED')">Attended</button>
+                        <button class="btn-miss" onclick="markAttendance({{ booking.id }}, 'MISSED')">Missed</button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p>No classes booked for today.</p>
+                {% endfor %}
+            </div>
+            <div class="card progress-table">
+                <h3>Progress History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Weight (lb)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in weight_history %}
+                        <tr>
+                            <td>{{ item.date.strftime('%m/%d/%Y') }}</td>
+                            <td>{{ item.weight_lb }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2">No weight history for this client.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Attendance Calendar</h3>
+            <div id="calendar-container"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript remains the same -->
+    <script>
+        const attendedDates = new Set({
+            {
+                attended_dates | tojson
+            }
+        });
+
+        function renderCalendar(date) {
+            const container = document.getElementById('calendar-container');
+            const month = date.getMonth(),
+                year = date.getFullYear();
+            let html = `<div class="calendar-header" style="text-align:center;font-weight:700;margin-bottom:1rem;"><strong>${date.toLocaleString('default', { month: 'long' })} ${year}</strong></div><div class="calendar-grid">`;
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => {
+                html += `<div class="day-name">${d}</div>`;
+            });
+            const firstDay = new Date(year, month, 1).getDay();
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div></div>';
+            }
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const currentDate = new Date(year, month, i);
+                const dateStr = currentDate.toISOString().slice(0, 10);
+                html += `<div class="day-number ${attendedDates.has(dateStr) ? 'attended' : ''}">${i}</div>`;
+            }
+            container.innerHTML = html + '</div>';
+        }
+        renderCalendar(new Date());
+
+        function markAttendance(bookingId, status) {
+            const formData = new FormData();
+            formData.append('booking_id', bookingId);
+            formData.append('status', status);
+            fetch('/api/mark_attendance', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`actions-${bookingId}`).style.display = 'none';
+                        document.getElementById(`status-text-${bookingId}`).textContent = status;
+                        alert('Attendance marked! The calendar will update when you revisit this page.');
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
